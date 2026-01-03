@@ -1,7 +1,7 @@
 import torch
 from datetime import timedelta, datetime, timezone
-import argparse
-from helpers import load_model, load_weather_data, inverse_scale_predictions, build_last_sequence, TARGET_COLS, TARGET_UNITS, HORIZON, LOOKBACK
+from knoweldge_system.helpers import load_model, load_weather_data, inverse_scale_predictions, build_last_sequence, TARGET_COLS, TARGET_UNITS, HORIZON, LOOKBACK
+from knoweldge_system.predict_extreme import integrate_events_into_forecast
 import joblib
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -62,14 +62,3 @@ def run_forecast(artifact_path):
         "forecast": forecast,
         "events": []  # filled by predict_extreme.py
     }
-
-
-
-# CLI ENTRY POINT
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run weather forecast")
-    parser.add_argument("--artifact-path", help="Path to arifact of you location (casa, sale, benimellal)")
-    args = parser.parse_args()
-
-    result = run_forecast(artifact_path=args.artifact_path)
-    print(result)
