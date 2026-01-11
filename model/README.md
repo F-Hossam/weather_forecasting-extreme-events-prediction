@@ -4,6 +4,28 @@ Model folder overview
 This folder contains the data prep notebook, trained artifacts, and the
 inference/forecasting scripts.
 
+Running the API with Docker
+---------------------------
+From the repo root:
+- Build the image:
+  - docker build -t model_api model
+- Run the container:
+  - docker run --rm -p 8000:8000 model_api
+
+Quick checks:
+- Health: http://localhost:8000/health
+- Forecast (POST):
+  - URL: http://localhost:8000/forecast
+  - Body (JSON):
+    - {"city_name": "casablanca"}
+
+What the result looks like
+--------------------------
+The /forecast response includes:
+- metadata: model name, horizon, and generation timestamp.
+- forecast: list of daily values with units (temperature, precipitation, etc.).
+- events: detected extreme events, summaries, and recommendations.
+
 Subfolders
 ----------
 - building_model: Data preparation notebook(s) used to build the training
@@ -139,3 +161,4 @@ model/knoweldge_system/helpers.py
     scaled/unscaled arrays, detected events).
 - How used:
   - Imported by `run_forecast.py`; not meant to be run directly.
+

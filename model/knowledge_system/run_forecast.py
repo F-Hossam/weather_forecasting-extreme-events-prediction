@@ -1,7 +1,7 @@
 import torch
 from datetime import timedelta, datetime, timezone
-from knoweldge_system.helpers import load_model, load_weather_data, inverse_scale_predictions, build_last_sequence, TARGET_COLS, TARGET_UNITS, HORIZON, LOOKBACK
-from knoweldge_system.predict_extreme import integrate_events_into_forecast
+from knowledge_system.helpers import load_model, load_weather_data, inverse_scale_predictions, build_last_sequence, TARGET_COLS, TARGET_UNITS, HORIZON, LOOKBACK
+from knowledge_system.predict_extreme import integrate_events_into_forecast
 import joblib
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"

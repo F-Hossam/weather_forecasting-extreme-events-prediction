@@ -2,8 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Dict, Any
 from pathlib import Path
-from knoweldge_system.run_forecast import run_forecast
-
+from knowledge_system.run_forecast import run_forecast
 
 BASE_DIR = Path(__file__).resolve().parent              # model/
 KNOWLEDGE_DIR = BASE_DIR / "knowledge_system"           # model/knowledge_system
@@ -15,12 +14,12 @@ ARTIFACTS = {
     "sale": ARTIFACTS_DIR / "sale",
 }
 
-
 app = FastAPI(
     title="Weather Forecast & Extreme Event API",
     description="LSTM-based weather forecasting with rule-based extreme event detection",
     version="1.0.0"
 )
+
 
 class ForecastRequest(BaseModel):
     city_name: str
@@ -29,7 +28,7 @@ class ForecastRequest(BaseModel):
 class ForecastResponse(BaseModel):
     metadata: Dict[str, Any]
     forecast: list[Dict[str, Any]]
-    events: list[Dict[str, Any]]
+    events: Dict[str, Any]
 
 
 @app.get("/health")
@@ -56,7 +55,13 @@ def forecast(req: ForecastRequest):
         )
 
     try:
-        return run_forecast(str(artifact_path))
+        result = run_forecast(str(artifact_path))
+        response = ForecastResponse(
+            metadata=result["metadata"],
+            forecast=result["forecast"],
+            events=result["events"]
+        )
+        return response
 
     except Exception as e:
         raise HTTPException(
