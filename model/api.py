@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import Dict, Any
+from typing import Dict, Any, Union
 from pathlib import Path
 from knowledge_system.run_forecast import run_forecast
 
@@ -28,7 +28,7 @@ class ForecastRequest(BaseModel):
 class ForecastResponse(BaseModel):
     metadata: Dict[str, Any]
     forecast: list[Dict[str, Any]]
-    events: Dict[str, Any]
+    events: Union[Dict[str, Any], list]
 
 
 @app.get("/health")

@@ -53,6 +53,8 @@ def run_forecast(artifact_path):
             }
         forecast.append(day)
 
+    events = integrate_events_into_forecast(forecast)
+
     return {
         "metadata": {
             "model": "WeatherLSTM",
@@ -60,5 +62,5 @@ def run_forecast(artifact_path):
             "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         },
         "forecast": forecast,
-        "events": []  # filled by predict_extreme.py
+        "events": events  # filled by predict_extreme.py
     }
