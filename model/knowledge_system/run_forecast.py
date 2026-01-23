@@ -47,8 +47,9 @@ def run_forecast(artifact_path):
             "date": date.strftime("%Y-%m-%d")
         }
         for j, var in enumerate(TARGET_COLS):
+            value = round(float(Y_real[i, j]), 2)
             day[var] = {
-                "value": round(float(Y_real[i, j]), 2),
+                "value": 0 if value < 0 else value,
                 "unit": TARGET_UNITS[var]
             }
         forecast.append(day)
