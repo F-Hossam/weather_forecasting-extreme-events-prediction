@@ -6,7 +6,7 @@ services:
     container_name: spark
     volumes:
       - ./producer:/producer
-      - ./DATA:/data
+      - ../knowledge_system/artifacts:/data
       - ./locations.json:/locations.json
     command: sleep infinity
 
@@ -20,9 +20,11 @@ services:
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./producer:/producer
-      - ./DATA:/data
+      - ../knowledge_system/artifacts:/data
       - ./locations.json:/locations.json
     environment:
+      AIRFLOW_UID: ${UID}
+      AIRFLOW_GID: ${GID}
       AIRFLOW_HOME: /opt/airflow
       AIRFLOW__CORE__EXECUTOR: SequentialExecutor
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"

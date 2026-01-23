@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e
 
+# --------------------------------------------------------
+AIRFLOW_UID=${AIRFLOW_UID:-50000}
+AIRFLOW_GID=${AIRFLOW_GID:-50000}
+
 echo "Starting Airflow initialization..."
 
 airflow db init

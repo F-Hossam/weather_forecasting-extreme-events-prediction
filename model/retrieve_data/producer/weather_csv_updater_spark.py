@@ -13,7 +13,7 @@ from pyspark.sql.functions import col, to_date, avg, max as spark_max, min as sp
 # --------------------
 LOCATIONS_PATH = "/locations.json"
 DATA_DIR = "/data"
-CITIES_TO_UPDATE = ["benimellal", "casa", "sale"]
+CITIES_TO_UPDATE = ["benimellal", "casablanca", "sale"]
 
 # --------------------
 # SPARK SESSION
@@ -94,7 +94,7 @@ def fetch_hourly_to_spark(lat: float, lon: float, start: datetime, end: datetime
 # UPDATE CITY
 # --------------------
 def update_city(city: str, coords: dict):
-    csv_path = f"{DATA_DIR}/{city}.csv"
+    csv_path = f"{DATA_DIR}/{city}/weather.csv"
     start = to_datetime(get_last_date(csv_path))
     end = to_datetime(datetime.now(timezone.utc).date() - timedelta(days=1))
 
