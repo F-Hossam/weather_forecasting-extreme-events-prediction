@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  spark:
+    image: apache/spark:3.5.0
+    container_name: spark
+    volumes:
+      - ./producer:/producer
+      - ../knowledge_system/artifacts:/data
+      - ./locations.json:/locations.json
+    command: sleep infinity
+
+  airflow:
+    build: ./airflow
+    container_name: airflow
+    depends_on:
+      - spark
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./producer:/producer
+      - ../knowledge_system/artifacts:/data
+      - ./locations.json:/locations.json
+    environment:
+      AIRFLOW_UID: ${UID}
+      AIRFLOW_GID: ${GID}
+      AIRFLOW_HOME: /opt/airflow
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
