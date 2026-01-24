@@ -1,20 +1,61 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Cloud, AlertTriangle, MapPin, AlertCircle, TrendingUp, Wind, Droplets, Flame } from 'lucide-react';
-import { POPULAR_CITIES } from '@/lib/cities';
+import {
+  Cloud,
+  AlertTriangle,
+  MapPin,
+  AlertCircle,
+  TrendingUp,
+  Wind,
+  Droplets,
+  Flame,
+} from 'lucide-react';
 
-const CITY_ALERTS = POPULAR_CITIES.slice(0, 6).map((city, idx) => ({
-  city: city.name,
-  country: city.country,
-  severity: ['extreme', 'high', 'moderate', 'low'][idx % 4] as const,
-  alerts: [
-    { type: 'Weather Event', probability: `${45 + idx * 8}%`, icon: '🌦️' },
-    ...(idx % 2 === 0 ? [{ type: 'Secondary Alert', probability: `${30 + idx * 5}%`, icon: '⚠️' }] : []),
-  ],
-}));
+import { POPULAR_CITIES } from '@/lib/cities';
+import { getForecast, type ForecastResponse } from '@/lib/api';
 
 export default function AlertsPage() {
+  const [alerts, setAlerts] = useState<Record<string, ForecastResponse | null>>(
+    {}
+  );
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchAllAlerts = async () => {
+      try {
+        setLoading(true);
+        const alertsData: Record<string, ForecastResponse | null> = {};
+
+        for (const city of POPULAR_CITIES) {
+          try {
+            const data = await getForecast(city.name);
+            alertsData[city.name] = data;
+          } catch (err) {
+            console.error(
+              `[alerts] Failed to fetch alerts for ${city.name}:`,
+              err
+            );
+            alertsData[city.name] = null;
+          }
+        }
+
+        setAlerts(alertsData);
+        setError(null);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : 'Failed to fetch alerts'
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllAlerts();
+  }, []);
+
   const severityColor = (severity: string) => {
     switch (severity) {
       case 'high':
@@ -57,152 +98,108 @@ export default function AlertsPage() {
             <div className="p-2 bg-primary/20 rounded-lg">
               <Cloud className="w-6 h-6 text-primary" />
             </div>
-            <span className="text-xl font-bold text-foreground">WeatherPredict</span>
+            <span className="text-xl font-bold text-foreground">
+              WeatherPredict
+            </span>
           </Link>
           <div className="flex items-center gap-4">
-            <Link href="/weather" className="px-4 py-2 bg-card border border-border text-foreground rounded-lg hover:border-primary/50 transition">
+            <Link
+              href="/weather"
+              className="px-4 py-2 bg-card border border-border rounded-lg"
+            >
               Dashboard
             </Link>
-            <Link href="/" className="px-4 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80 transition">
+            <Link
+              href="/"
+              className="px-4 py-2 bg-muted text-muted-foreground rounded-lg"
+            >
               Home
             </Link>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="px-6 sm:px-12 py-12">
-        <div className="max-w-6xl mx-auto">
-          {/* Page Header */}
-          <div className="mb-12">
-            <div className="flex items-center gap-3 mb-3">
-              <AlertTriangle className="w-8 h-8 text-destructive" />
-              <h1 className="text-4xl sm:text-5xl font-bold text-foreground">Global Weather Alerts</h1>
-            </div>
-            <p className="text-lg text-muted-foreground">Real-time severe weather notifications across all monitored cities</p>
+      <main className="px-6 sm:px-12 py-12 max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="mb-12">
+          <div className="flex items-center gap-3 mb-3">
+            <AlertTriangle className="w-8 h-8 text-destructive" />
+            <h1 className="text-4xl font-bold">Global Weather Alerts</h1>
           </div>
+          <p className="text-muted-foreground">
+            Severe weather alerts per monitored city
+          </p>
+        </div>
 
-          {/* Alert Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
-            <div className="bg-card border border-border rounded-xl p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-destructive/20 rounded-lg">
-                  <AlertCircle className="w-5 h-5 text-destructive" />
-                </div>
-                <p className="text-muted-foreground text-sm">High Risk Cities</p>
-              </div>
-              <p className="text-3xl font-bold text-foreground">
-                {CITY_ALERTS.filter((c) => c.severity === 'high').length}
-              </p>
-            </div>
-            <div className="bg-card border border-border rounded-xl p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-yellow-500/20 rounded-lg">
-                  <TrendingUp className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-                </div>
-                <p className="text-muted-foreground text-sm">Medium Risk</p>
-              </div>
-              <p className="text-3xl font-bold text-foreground">
-                {CITY_ALERTS.filter((c) => c.severity === 'medium').length}
-              </p>
-            </div>
-            <div className="bg-card border border-border rounded-xl p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-green-500/20 rounded-lg">
-                  <Wind className="w-5 h-5 text-green-600 dark:text-green-400" />
-                </div>
-                <p className="text-muted-foreground text-sm">Total Cities</p>
-              </div>
-              <p className="text-3xl font-bold text-foreground">{CITY_ALERTS.length}</p>
-            </div>
-          </div>
+        {loading && <p>Fetching alerts…</p>}
+        {error && <p className="text-destructive">{error}</p>}
 
-          {/* City Alerts Grid */}
-          <div className="space-y-6">
-            {CITY_ALERTS.map((cityData) => (
-              <div key={cityData.city} className={`border-l-4 rounded-xl p-6 sm:p-8 transition ${severityColor(cityData.severity)}`}>
-                {/* City Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        {!loading &&
+          POPULAR_CITIES.map((city) => {
+            const cityData = alerts[city.name];
+            const events = cityData?.events?.[0];
+            const detailed = events?.detailed_events ?? [];
+            const hasAlerts = detailed.length > 0;
+
+            const severity =
+              events?.max_severity === 'HIGH'
+                ? 'high'
+                : events?.max_severity === 'MODERATE'
+                ? 'medium'
+                : 'low';
+
+            return (
+              <div
+                key={city.name}
+                className={`border-l-4 rounded-xl p-6 mb-6 ${severityColor(
+                  severity
+                )}`}
+              >
+                <div className="flex justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <MapPin className="w-6 h-6 text-primary" />
                     <div>
-                      <h3 className="text-2xl font-bold text-foreground">{cityData.city}</h3>
-                      <p className="text-muted-foreground">{cityData.country}</p>
+                      <h3 className="text-xl font-bold">{city.name}</h3>
+                      <p className="text-muted-foreground">
+                        {city.country}
+                      </p>
                     </div>
                   </div>
-                  <span className={`px-4 py-2 rounded-full text-sm font-semibold ${severityBadgeColor(cityData.severity)}`}>
-                    {severityLabel(cityData.severity)}
+                  <span
+                    className={`px-4 py-2 rounded-full text-sm ${severityBadgeColor(
+                      severity
+                    )}`}
+                  >
+                    {severityLabel(severity)}
+                    {hasAlerts && ` (${detailed.length})`}
                   </span>
                 </div>
 
-                {/* Alerts List */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {cityData.alerts.map((alert, idx) => (
-                    <div key={idx} className="bg-background border border-border rounded-lg p-4 hover:border-primary/50 transition">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="text-lg font-semibold text-foreground mb-1">{alert.type}</p>
-                          <div className="flex items-center gap-2">
-                            <div className="w-24 h-2 bg-border rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-primary"
-                                style={{ width: alert.probability }}
-                              ></div>
-                            </div>
-                            <span className="text-sm font-bold text-foreground">{alert.probability}</span>
-                          </div>
-                        </div>
-                        <span className="text-3xl">{alert.icon}</span>
+                {hasAlerts ? (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {detailed.map((alert, idx) => (
+                      <div
+                        key={idx}
+                        className="border rounded-lg p-4 bg-background"
+                      >
+                        <p className="font-semibold">{alert.type}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {alert.description}
+                        </p>
+                        <p className="text-xs mt-1">
+                          Confidence: {alert.confidence}
+                        </p>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-sm">
+                    No severe alerts for this period
+                  </p>
+                )}
               </div>
-            ))}
-          </div>
-
-          {/* Alert Legend */}
-          <div className="mt-12 p-8 bg-card border border-border rounded-xl">
-            <h4 className="text-lg font-bold text-foreground mb-6">Alert Categories</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="flex items-start gap-3">
-                <Flame className="w-5 h-5 text-destructive flex-shrink-0 mt-1" />
-                <div>
-                  <p className="font-semibold text-foreground">Heat Events</p>
-                  <p className="text-sm text-muted-foreground">Heat waves and extreme temperatures</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <Droplets className="w-5 h-5 text-accent flex-shrink-0 mt-1" />
-                <div>
-                  <p className="font-semibold text-foreground">Water Hazards</p>
-                  <p className="text-sm text-muted-foreground">Rainfall, flooding, and flooding risks</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <Wind className="w-5 h-5 text-secondary flex-shrink-0 mt-1" />
-                <div>
-                  <p className="font-semibold text-foreground">Wind Events</p>
-                  <p className="text-sm text-muted-foreground">Strong winds and storm systems</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* CTA Section */}
-          <div className="mt-12 p-8 bg-primary/10 border border-primary/30 rounded-xl text-center">
-            <h3 className="text-2xl font-bold text-foreground mb-3">Stay Informed</h3>
-            <p className="text-muted-foreground mb-6">
-              Get real-time notifications for severe weather events in your selected cities
-            </p>
-            <Link
-              href="/weather"
-              className="inline-block px-8 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition"
-            >
-              View Weather Dashboard
-            </Link>
-          </div>
-        </div>
+            );
+          })}
       </main>
     </div>
   );

@@ -1,80 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Cloud, MapPin, Search, X, Droplets, Wind, Gauge, Sun, AlertTriangle, TrendingUp, CloudRain, Eye } from 'lucide-react';
 import { POPULAR_CITIES } from '@/lib/cities';
+import { getForecast, type ForecastResponse, ApiResponse, WeatherData } from '@/lib/api';
 
-interface ForecastDay {
-  date: string;
-  mean_temperature: { value: number; unit: string };
-  max_temperature: { value: number; unit: string };
-  min_temperature: { value: number; unit: string };
-  total_precipitation: { value: number; unit: string };
-  mean_windSpeed: { value: number; unit: string };
-  mean_dewPoint: { value: number; unit: string };
-  mean_visibility: { value: number; unit: string };
-  events: Array<{
-    date: string;
-    event_id: string;
-    type: string;
-    severity: string;
-    category: string;
-    description: string;
-    confidence: string;
-  }>;
-}
 
-interface WeatherEvent {
-  date?: string;
-  event_id: string;
-  type: string;
-  severity: string;
-  category: string;
-  description?: string;
-  confidence?: string;
-}
-
-interface ApiResponse {
-  metadata: {
-    model: string;
-    horizon_days: number;
-    generated_at: string;
-  };
-  forecast: ForecastDay[];
-  events: Array<{
-    total_events: number;
-    severity_distribution: Record<string, number>;
-    severity_score: number;
-    event_types: Record<string, number>;
-    event_categories: Record<string, number>;
-    max_severity: string;
-    high_risk_days: string[];
-    most_affected_days: string[];
-    event_timeline: WeatherEvent[];
-    detailed_events: WeatherEvent[];
-    statistics: Record<string, number>;
-  }>;
-}
-
-interface WeatherData {
-  city: string;
-  temperature: number;
-  condition: string;
-  humidity: number;
-  windSpeed: number;
-  pressure: number;
-  visibility: number;
-  feelsLike: number;
-}
 
 export default function WeatherPage() {
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [forecastData, setForecastData] = useState<ApiResponse | null>(null);
+  const [forecastData, setForecastData] = useState<ForecastResponse | null>(null);
   const [loading, setLoading] = useState(false);
-  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const filteredCities = POPULAR_CITIES.filter(
     (city) =>
@@ -82,176 +22,21 @@ export default function WeatherPage() {
       city.country.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleSelectCity = (cityName: string) => {
+  const handleSelectCity = async (cityName: string) => {
     setSelectedCity(cityName);
     setShowModal(false);
     setLoading(true);
+    setError(null);
 
-    // Simulate API call with forecast data
-    setTimeout(() => {
-      const mockData: ApiResponse = {
-        metadata: {
-          model: 'WeatherLSTM',
-          horizon_days: 7,
-          generated_at: new Date().toISOString(),
-        },
-        forecast: [
-          {
-            date: new Date().toISOString().split('T')[0],
-            mean_temperature: { value: 23.22, unit: '°C' },
-            max_temperature: { value: 27.85, unit: '°C' },
-            min_temperature: { value: 18.1, unit: '°C' },
-            total_precipitation: { value: 0.5, unit: 'mm' },
-            mean_windSpeed: { value: 2.07, unit: 'm/s' },
-            mean_dewPoint: { value: 18.96, unit: '°C' },
-            mean_visibility: { value: 6.16, unit: 'km' },
-            events: [],
-          },
-          {
-            date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-            mean_temperature: { value: 23.25, unit: '°C' },
-            max_temperature: { value: 27.69, unit: '°C' },
-            min_temperature: { value: 18.2, unit: '°C' },
-            total_precipitation: { value: 1.2, unit: 'mm' },
-            mean_windSpeed: { value: 2.09, unit: 'm/s' },
-            mean_dewPoint: { value: 18.99, unit: '°C' },
-            mean_visibility: { value: 5.2, unit: 'km' },
-            events: [],
-          },
-          {
-            date: new Date(Date.now() + 172800000).toISOString().split('T')[0],
-            mean_temperature: { value: 23.03, unit: '°C' },
-            max_temperature: { value: 28.1, unit: '°C' },
-            min_temperature: { value: 17.83, unit: '°C' },
-            total_precipitation: { value: 0.07, unit: 'mm' },
-            mean_windSpeed: { value: 2.11, unit: 'm/s' },
-            mean_dewPoint: { value: 18.82, unit: '°C' },
-            mean_visibility: { value: 5.48, unit: 'km' },
-            events: [],
-          },
-          {
-            date: new Date(Date.now() + 259200000).toISOString().split('T')[0],
-            mean_temperature: { value: 23.17, unit: '°C' },
-            max_temperature: { value: 27.98, unit: '°C' },
-            min_temperature: { value: 17.66, unit: '°C' },
-            total_precipitation: { value: 2.1, unit: 'mm' },
-            mean_windSpeed: { value: 2.1, unit: 'm/s' },
-            mean_dewPoint: { value: 18.75, unit: '°C' },
-            mean_visibility: { value: 5.49, unit: 'km' },
-            events: [
-              {
-                date: new Date(Date.now() + 259200000).toISOString().split('T')[0],
-                event_id: 'heavy_rain',
-                type: 'Heavy Rainfall',
-                severity: 'MODERATE',
-                category: 'Precipitation',
-                description: 'Heavy rainfall expected',
-                confidence: 'HIGH',
-              },
-            ],
-          },
-          {
-            date: new Date(Date.now() + 345600000).toISOString().split('T')[0],
-            mean_temperature: { value: 22.81, unit: '°C' },
-            max_temperature: { value: 27.68, unit: '°C' },
-            min_temperature: { value: 17.45, unit: '°C' },
-            total_precipitation: { value: 0.0, unit: 'mm' },
-            mean_windSpeed: { value: 2.07, unit: 'm/s' },
-            mean_dewPoint: { value: 18.61, unit: '°C' },
-            mean_visibility: { value: 6.9, unit: 'km' },
-            events: [],
-          },
-          {
-            date: new Date(Date.now() + 432000000).toISOString().split('T')[0],
-            mean_temperature: { value: 22.87, unit: '°C' },
-            max_temperature: { value: 27.79, unit: '°C' },
-            min_temperature: { value: 17.81, unit: '°C' },
-            total_precipitation: { value: 0.3, unit: 'mm' },
-            mean_windSpeed: { value: 2.11, unit: 'm/s' },
-            mean_dewPoint: { value: 18.76, unit: '°C' },
-            mean_visibility: { value: 4.7, unit: 'km' },
-            events: [],
-          },
-          {
-            date: new Date(Date.now() + 518400000).toISOString().split('T')[0],
-            mean_temperature: { value: 22.88, unit: '°C' },
-            max_temperature: { value: 27.87, unit: '°C' },
-            min_temperature: { value: 17.64, unit: '°C' },
-            total_precipitation: { value: 0.8, unit: 'mm' },
-            mean_windSpeed: { value: 2.06, unit: 'm/s' },
-            mean_dewPoint: { value: 18.8, unit: '°C' },
-            mean_visibility: { value: 7.24, unit: 'km' },
-            events: [
-              {
-                date: new Date(Date.now() + 518400000).toISOString().split('T')[0],
-                event_id: 'dry_spell',
-                type: 'Dry Spell',
-                severity: 'MODERATE',
-                category: 'Drought',
-                description: 'Extended dry period',
-                confidence: 'HIGH',
-              },
-            ],
-          },
-        ],
-        events: [
-          {
-            total_events: 2,
-            severity_distribution: { MODERATE: 2 },
-            severity_score: 2,
-            event_types: { 'Heavy Rainfall': 1, 'Dry Spell': 1 },
-            event_categories: { Precipitation: 1, Drought: 1 },
-            max_severity: 'MODERATE',
-            high_risk_days: [],
-            most_affected_days: [],
-            event_timeline: [
-              {
-                date: new Date(Date.now() + 259200000).toISOString().split('T')[0],
-                event_id: 'heavy_rain',
-                type: 'Heavy Rainfall',
-                severity: 'MODERATE',
-                category: 'Precipitation',
-              },
-              {
-                date: new Date(Date.now() + 518400000).toISOString().split('T')[0],
-                event_id: 'dry_spell',
-                type: 'Dry Spell',
-                severity: 'MODERATE',
-                category: 'Drought',
-              },
-            ],
-            detailed_events: [
-              {
-                date: new Date(Date.now() + 259200000).toISOString().split('T')[0],
-                event_id: 'heavy_rain',
-                type: 'Heavy Rainfall',
-                severity: 'MODERATE',
-                category: 'Precipitation',
-                description: 'Heavy rainfall expected with 2.1 mm precipitation',
-                confidence: 'HIGH',
-              },
-              {
-                date: new Date(Date.now() + 518400000).toISOString().split('T')[0],
-                event_id: 'dry_spell',
-                type: 'Dry Spell',
-                severity: 'MODERATE',
-                category: 'Drought',
-                description: 'Extended dry period risk',
-                confidence: 'HIGH',
-              },
-            ],
-            statistics: {
-              extreme_events: 0,
-              high_severity_events: 0,
-              moderate_severity_events: 2,
-              low_severity_events: 0,
-            },
-          },
-        ],
-      };
-      setForecastData(mockData);
+    try {
+      const data = await getForecast(cityName);
+      setForecastData(data);
       setLoading(false);
-    }, 800);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch forecast data';
+      setError(errorMessage);
+      setLoading(false);
+    }
   };
 
   const handleChangeCity = () => {
@@ -337,8 +122,18 @@ export default function WeatherPage() {
         </div>
       )}
 
+      {/* Error Display */}
+      {error && (
+        <div className="px-6 sm:px-12 py-4 bg-destructive/10 border-b border-destructive/30">
+          <div className="max-w-6xl mx-auto flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0" />
+            <p className="text-destructive text-sm">{error}</p>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
-      {selectedCity && forecastData && !loading && (
+      {selectedCity && forecastData && !loading && !error && (
         <main className="px-6 sm:px-12 py-8">
           <div className="max-w-6xl mx-auto space-y-8">
             {/* City Header */}

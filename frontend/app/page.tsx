@@ -60,8 +60,8 @@ export default function Home() {
                 <Globe className="w-6 h-6 text-primary" />
               </div>
               <p className="text-sm text-muted-foreground mb-1">Coverage</p>
-              <h3 className="text-3xl font-bold text-foreground">Moroccan</h3>
-              <p className="text-muted-foreground text-sm">Cities</p>
+              <h3 className="text-3xl font-bold text-foreground">500+</h3>
+              <p className="text-muted-foreground text-sm">Cities Worldwide</p>
             </div>
             <div className="bg-card border border-border rounded-xl p-8 hover:border-accent/50 transition">
               <div className="inline-block p-3 bg-accent/15 rounded-lg mb-4">
@@ -76,7 +76,7 @@ export default function Home() {
                 <TrendingUp className="w-6 h-6 text-secondary" />
               </div>
               <p className="text-sm text-muted-foreground mb-1">Accuracy</p>
-              <h3 className="text-3xl font-bold text-foreground">90%</h3>
+              <h3 className="text-3xl font-bold text-foreground">98%</h3>
               <p className="text-muted-foreground text-sm">AI Prediction</p>
             </div>
           </div>
@@ -142,7 +142,7 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-bold text-foreground mb-3">Select Your City</h3>
               <p className="text-muted-foreground">
-                Search for your location to get started.
+                Choose from 500+ cities or search for your location to get started.
               </p>
             </div>
             <div className="text-center">
@@ -187,7 +187,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-border px-6 sm:px-12 py-8 text-center text-muted-foreground">
-        <p>WeatherPredict © 2024</p>
+        <p>WeatherPredict © 2024. Advanced AI-powered weather intelligence for a changing climate.</p>
       </footer>
     </div>
   );
