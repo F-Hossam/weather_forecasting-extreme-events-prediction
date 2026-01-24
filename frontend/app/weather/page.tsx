@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { Cloud, MapPin, Search, X, Droplets, Wind, Gauge, Sun, AlertTriangle, TrendingUp, CloudRain, Eye } from 'lucide-react';
 import { POPULAR_CITIES } from '@/lib/cities';
@@ -57,16 +57,17 @@ interface ApiResponse {
   }>;
 }
 
-interface WeatherData {
+interface RealtimePayload {
   city: string;
-  temperature: number;
-  condition: string;
-  humidity: number;
-  windSpeed: number;
-  pressure: number;
-  visibility: number;
-  feelsLike: number;
+  generated_at: string;
+  current: ForecastDay | null;
+  events_summary?: {
+    total_events?: number;
+    max_severity?: string;
+  };
 }
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
 export default function WeatherPage() {
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
@@ -74,7 +75,8 @@ export default function WeatherPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [forecastData, setForecastData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
-  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [realtime, setRealtime] = useState<RealtimePayload | null>(null);
 
   const filteredCities = POPULAR_CITIES.filter(
     (city) =>
@@ -85,179 +87,96 @@ export default function WeatherPage() {
   const handleSelectCity = (cityName: string) => {
     setSelectedCity(cityName);
     setShowModal(false);
-    setLoading(true);
-
-    // Simulate API call with forecast data
-    setTimeout(() => {
-      const mockData: ApiResponse = {
-        metadata: {
-          model: 'WeatherLSTM',
-          horizon_days: 7,
-          generated_at: new Date().toISOString(),
-        },
-        forecast: [
-          {
-            date: new Date().toISOString().split('T')[0],
-            mean_temperature: { value: 23.22, unit: '°C' },
-            max_temperature: { value: 27.85, unit: '°C' },
-            min_temperature: { value: 18.1, unit: '°C' },
-            total_precipitation: { value: 0.5, unit: 'mm' },
-            mean_windSpeed: { value: 2.07, unit: 'm/s' },
-            mean_dewPoint: { value: 18.96, unit: '°C' },
-            mean_visibility: { value: 6.16, unit: 'km' },
-            events: [],
-          },
-          {
-            date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-            mean_temperature: { value: 23.25, unit: '°C' },
-            max_temperature: { value: 27.69, unit: '°C' },
-            min_temperature: { value: 18.2, unit: '°C' },
-            total_precipitation: { value: 1.2, unit: 'mm' },
-            mean_windSpeed: { value: 2.09, unit: 'm/s' },
-            mean_dewPoint: { value: 18.99, unit: '°C' },
-            mean_visibility: { value: 5.2, unit: 'km' },
-            events: [],
-          },
-          {
-            date: new Date(Date.now() + 172800000).toISOString().split('T')[0],
-            mean_temperature: { value: 23.03, unit: '°C' },
-            max_temperature: { value: 28.1, unit: '°C' },
-            min_temperature: { value: 17.83, unit: '°C' },
-            total_precipitation: { value: 0.07, unit: 'mm' },
-            mean_windSpeed: { value: 2.11, unit: 'm/s' },
-            mean_dewPoint: { value: 18.82, unit: '°C' },
-            mean_visibility: { value: 5.48, unit: 'km' },
-            events: [],
-          },
-          {
-            date: new Date(Date.now() + 259200000).toISOString().split('T')[0],
-            mean_temperature: { value: 23.17, unit: '°C' },
-            max_temperature: { value: 27.98, unit: '°C' },
-            min_temperature: { value: 17.66, unit: '°C' },
-            total_precipitation: { value: 2.1, unit: 'mm' },
-            mean_windSpeed: { value: 2.1, unit: 'm/s' },
-            mean_dewPoint: { value: 18.75, unit: '°C' },
-            mean_visibility: { value: 5.49, unit: 'km' },
-            events: [
-              {
-                date: new Date(Date.now() + 259200000).toISOString().split('T')[0],
-                event_id: 'heavy_rain',
-                type: 'Heavy Rainfall',
-                severity: 'MODERATE',
-                category: 'Precipitation',
-                description: 'Heavy rainfall expected',
-                confidence: 'HIGH',
-              },
-            ],
-          },
-          {
-            date: new Date(Date.now() + 345600000).toISOString().split('T')[0],
-            mean_temperature: { value: 22.81, unit: '°C' },
-            max_temperature: { value: 27.68, unit: '°C' },
-            min_temperature: { value: 17.45, unit: '°C' },
-            total_precipitation: { value: 0.0, unit: 'mm' },
-            mean_windSpeed: { value: 2.07, unit: 'm/s' },
-            mean_dewPoint: { value: 18.61, unit: '°C' },
-            mean_visibility: { value: 6.9, unit: 'km' },
-            events: [],
-          },
-          {
-            date: new Date(Date.now() + 432000000).toISOString().split('T')[0],
-            mean_temperature: { value: 22.87, unit: '°C' },
-            max_temperature: { value: 27.79, unit: '°C' },
-            min_temperature: { value: 17.81, unit: '°C' },
-            total_precipitation: { value: 0.3, unit: 'mm' },
-            mean_windSpeed: { value: 2.11, unit: 'm/s' },
-            mean_dewPoint: { value: 18.76, unit: '°C' },
-            mean_visibility: { value: 4.7, unit: 'km' },
-            events: [],
-          },
-          {
-            date: new Date(Date.now() + 518400000).toISOString().split('T')[0],
-            mean_temperature: { value: 22.88, unit: '°C' },
-            max_temperature: { value: 27.87, unit: '°C' },
-            min_temperature: { value: 17.64, unit: '°C' },
-            total_precipitation: { value: 0.8, unit: 'mm' },
-            mean_windSpeed: { value: 2.06, unit: 'm/s' },
-            mean_dewPoint: { value: 18.8, unit: '°C' },
-            mean_visibility: { value: 7.24, unit: 'km' },
-            events: [
-              {
-                date: new Date(Date.now() + 518400000).toISOString().split('T')[0],
-                event_id: 'dry_spell',
-                type: 'Dry Spell',
-                severity: 'MODERATE',
-                category: 'Drought',
-                description: 'Extended dry period',
-                confidence: 'HIGH',
-              },
-            ],
-          },
-        ],
-        events: [
-          {
-            total_events: 2,
-            severity_distribution: { MODERATE: 2 },
-            severity_score: 2,
-            event_types: { 'Heavy Rainfall': 1, 'Dry Spell': 1 },
-            event_categories: { Precipitation: 1, Drought: 1 },
-            max_severity: 'MODERATE',
-            high_risk_days: [],
-            most_affected_days: [],
-            event_timeline: [
-              {
-                date: new Date(Date.now() + 259200000).toISOString().split('T')[0],
-                event_id: 'heavy_rain',
-                type: 'Heavy Rainfall',
-                severity: 'MODERATE',
-                category: 'Precipitation',
-              },
-              {
-                date: new Date(Date.now() + 518400000).toISOString().split('T')[0],
-                event_id: 'dry_spell',
-                type: 'Dry Spell',
-                severity: 'MODERATE',
-                category: 'Drought',
-              },
-            ],
-            detailed_events: [
-              {
-                date: new Date(Date.now() + 259200000).toISOString().split('T')[0],
-                event_id: 'heavy_rain',
-                type: 'Heavy Rainfall',
-                severity: 'MODERATE',
-                category: 'Precipitation',
-                description: 'Heavy rainfall expected with 2.1 mm precipitation',
-                confidence: 'HIGH',
-              },
-              {
-                date: new Date(Date.now() + 518400000).toISOString().split('T')[0],
-                event_id: 'dry_spell',
-                type: 'Dry Spell',
-                severity: 'MODERATE',
-                category: 'Drought',
-                description: 'Extended dry period risk',
-                confidence: 'HIGH',
-              },
-            ],
-            statistics: {
-              extreme_events: 0,
-              high_severity_events: 0,
-              moderate_severity_events: 2,
-              low_severity_events: 0,
-            },
-          },
-        ],
-      };
-      setForecastData(mockData);
-      setLoading(false);
-    }, 800);
+    setError(null);
+    setForecastData(null);
+    setRealtime(null);
   };
 
   const handleChangeCity = () => {
     setShowModal(true);
     setSearchQuery('');
   };
+
+  useEffect(() => {
+    if (!selectedCity) {
+      return;
+    }
+
+    let cancelled = false;
+    const controller = new AbortController();
+
+    const loadForecast = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(`${API_BASE_URL}/forecast`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ city_name: selectedCity }),
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          const payload = await response.json().catch(() => ({}));
+          const detail = payload?.detail || 'Failed to fetch forecast data.';
+          throw new Error(detail);
+        }
+
+        const data = (await response.json()) as ApiResponse;
+        if (!cancelled) {
+          setForecastData(data);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to fetch forecast data.');
+          setForecastData(null);
+          setSelectedCity(null);
+          setShowModal(true);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadForecast();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [selectedCity]);
+
+  useEffect(() => {
+    if (!selectedCity) {
+      return;
+    }
+
+    const streamUrl = `${API_BASE_URL}/realtime?city_name=${encodeURIComponent(selectedCity)}`;
+    const eventSource = new EventSource(streamUrl);
+
+    eventSource.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data) as RealtimePayload;
+        setRealtime(payload);
+      } catch (err) {
+        console.error('Failed to parse realtime payload', err);
+      }
+    };
+
+    eventSource.onerror = () => {
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [selectedCity]);
+
+  const currentDay = useMemo(() => {
+    return realtime?.current || forecastData?.forecast?.[0] || null;
+  }, [forecastData, realtime]);
 
   return (
     <div className="min-h-screen bg-background dark:bg-black">
@@ -347,7 +266,14 @@ export default function WeatherPage() {
                 <MapPin className="w-8 h-8 text-primary" />
                 {selectedCity}
               </h1>
-              <p className="text-muted-foreground mt-2">Real-time weather dashboard</p>
+              <p className="text-muted-foreground mt-2">
+                Real-time weather dashboard
+                {realtime?.generated_at ? (
+                  <span className="ml-3 text-xs text-muted-foreground">
+                    Live update: {new Date(realtime.generated_at).toLocaleTimeString('en-US')}
+                  </span>
+                ) : null}
+              </p>
             </div>
 
             {/* Current Weather Section */}
@@ -360,12 +286,12 @@ export default function WeatherPage() {
                 </div>
                 <div>
                   <div className="text-6xl font-bold text-foreground mb-2">
-                    {Math.round(forecastData.forecast[0].mean_temperature.value)}°C
+                    {currentDay ? Math.round(currentDay.mean_temperature.value) : '--'}°C
                   </div>
                   <p className="text-lg text-foreground mb-4">Clear</p>
                   <p className="text-muted-foreground">
-                    Range: {Math.round(forecastData.forecast[0].min_temperature.value)}°C -{' '}
-                    {Math.round(forecastData.forecast[0].max_temperature.value)}°C
+                    Range: {currentDay ? Math.round(currentDay.min_temperature.value) : '--'}°C -{' '}
+                    {currentDay ? Math.round(currentDay.max_temperature.value) : '--'}°C
                   </p>
                 </div>
               </div>
@@ -378,7 +304,7 @@ export default function WeatherPage() {
                     <Droplets className="w-5 h-5 text-accent" />
                   </div>
                   <p className="text-3xl font-bold text-foreground">
-                    {Math.round(forecastData.forecast[0].mean_dewPoint.value)}°C
+                    {currentDay ? Math.round(currentDay.mean_dewPoint.value) : '--'}°C
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">Moisture indicator</p>
                 </div>
@@ -389,7 +315,7 @@ export default function WeatherPage() {
                     <Wind className="w-5 h-5 text-secondary" />
                   </div>
                   <p className="text-3xl font-bold text-foreground">
-                    {(forecastData.forecast[0].mean_windSpeed.value * 3.6).toFixed(1)} km/h
+                    {currentDay ? (currentDay.mean_windSpeed.value * 3.6).toFixed(1) : '--'} km/h
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">Gentle winds</p>
                 </div>
@@ -400,7 +326,7 @@ export default function WeatherPage() {
                     <CloudRain className="w-5 h-5 text-primary" />
                   </div>
                   <p className="text-3xl font-bold text-foreground">
-                    {forecastData.forecast[0].total_precipitation.value.toFixed(1)} mm
+                    {currentDay ? currentDay.total_precipitation.value.toFixed(1) : '--'} mm
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">Expected today</p>
                 </div>
@@ -411,7 +337,7 @@ export default function WeatherPage() {
                     <Eye className="w-5 h-5 text-destructive" />
                   </div>
                   <p className="text-3xl font-bold text-foreground">
-                    {forecastData.forecast[0].mean_visibility.value.toFixed(1)} km
+                    {currentDay ? currentDay.mean_visibility.value.toFixed(1) : '--'} km
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">Excellent visibility</p>
                 </div>
@@ -525,6 +451,21 @@ export default function WeatherPage() {
               <Cloud className="w-8 h-8 text-primary" />
             </div>
             <p className="text-foreground text-lg font-semibold">Loading weather data...</p>
+          </div>
+        </div>
+      )}
+
+      {error && !loading && (
+        <div className="flex items-center justify-center min-h-[40vh]">
+          <div className="bg-card border border-border rounded-xl p-6 text-center max-w-md">
+            <p className="text-lg font-semibold text-foreground mb-2">Unable to load city</p>
+            <p className="text-sm text-muted-foreground">{error}</p>
+            <button
+              onClick={() => setShowModal(true)}
+              className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition"
+            >
+              Choose another city
+            </button>
           </div>
         </div>
       )}

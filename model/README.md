@@ -12,6 +12,16 @@ From the repo root:
 - Run the container:
   - docker run --rm -p 8000:8000 model_api
 
+Local dev (uvicorn)
+-------------------
+From the repo root:
+- Install deps:
+  - pip install -r model/requirements.txt
+- Run:
+  - uvicorn model.api:app --reload --host 0.0.0.0 --port 8000
+- Optional CORS:
+  - CORS_ORIGINS=http://localhost:3000
+
 Quick checks:
 - Health: http://localhost:8000/health
 - Forecast (POST):
@@ -161,4 +171,3 @@ model/knoweldge_system/helpers.py
     scaled/unscaled arrays, detected events).
 - How used:
   - Imported by `run_forecast.py`; not meant to be run directly.
-
