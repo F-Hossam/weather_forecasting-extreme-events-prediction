@@ -74,7 +74,8 @@ def fetch_hourly_to_spark(lat: float, lon: float, start: datetime, end: datetime
             safe_value(row.get("dwpt")),
             safe_value(row.get("prcp")),
             safe_value(row.get("wspd")) / 3.6 if safe_value(row.get("wspd")) is not None else None,  # km/h → m/s
-            safe_value(row.get("visib")),
+            float(max(min((safe_value(row.get("temp")) - safe_value(row.get("dwpt"))) * 1.5, 10), 0))
+            if safe_value(row.get("temp")) is not None and safe_value(row.get("dwpt")) is not None else None,
         )
         for ts, row in pdf.iterrows()
     ]
